@@ -1,0 +1,3 @@
+date	size'/'remotesize	flags(request:Update,Range state:File response:Modified,Chunked,gZipped)	statuscode	status ('servermsg')	MIME	Etag|Date	URL	localfile	(from URL)
+15:07:00	162/162	---M--	301	error ('Moved%20Permanently')	text/html	date:Wed,%2008%20May%202024%2006:07:02%20GMT	http://docs.openwebui.com/robots.txt		(from )
+15:07:00	162/162	---M--	301	error ('Moved%20Permanently')	text/html	date:Wed,%2008%20May%202024%2006:07:02%20GMT	http://docs.openwebui.com/	D:/000.Dev/open-webui/webDocFull/docs.openwebui.com/ollama-doc/docs.openwebui.com/index.html	(from )
