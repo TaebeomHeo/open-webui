@@ -391,7 +391,7 @@
 	"Title (e.g. Tell me a fun fact)": "",
 	"Title Auto-Generation": "제목 자동 생성",
 	"Title Generation Prompt": "제목 생성 프롬프트",
-	"to": "~까지",
+	"to": " ",
 	"To access the available model names for downloading,": "다운로드 가능한 모델명을 확인하려면,",
 	"To access the GGUF models available for downloading,": "다운로드 가능한 GGUF 모델을 확인하려면,",
 	"to chat input.": "채팅 입력으로.",

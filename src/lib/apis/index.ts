@@ -23,6 +23,7 @@ export const getBackendConfig = async () => {
 		throw error;
 	}
 
+	console.log(`getBackendConfig : ${JSON.stringify(res,null,2)}`);
 	return res;
 };
 

@@ -41,7 +41,8 @@ export const initI18n = (defaultLocale: string) => {
 	let detectionOrder = defaultLocale
 		? ['querystring', 'localStorage']
 		: ['querystring', 'localStorage', 'navigator'];
-	let fallbackDefaultLocale = defaultLocale ? [defaultLocale] : ['en-US'];
+	// let fallbackDefaultLocale = defaultLocale ? [defaultLocale] : ['en-US'];
+	let fallbackDefaultLocale = defaultLocale ? [defaultLocale] : ['ko-KR'];
 
 	const loadResource = (language: string, namespace: string) =>
 		import(`./locales/${language}/${namespace}.json`);
