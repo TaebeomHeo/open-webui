@@ -30,6 +30,12 @@
 <nav id="nav" class=" sticky py-2.5 top-0 flex flex-row justify-center z-30">
 	<div class=" flex max-w-full w-full mx-auto px-5 pt-0.5 md:px-[1.3rem]">
 		<div class="flex items-center w-full max-w-full">
+			<!-- CAUTION: NOTE: -->
+			<!-- 슬로건 추가 -->
+			<div class="flex-1 text-left">
+				<p class="text-2xl font-semibold text-gray-700">😀 와와 AI 🤖</p>
+			</div>
+
 			<div class="flex-1 overflow-hidden max-w-full">
 				{#if showModelSelector}
 					<ModelSelector bind:selectedModels showSetDefault={!shareEnabled} />
