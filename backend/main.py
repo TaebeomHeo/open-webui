@@ -113,8 +113,8 @@ print(
                                                                  
 
  
-v{VERSION} - building the best open-source AI user interface.      
-https://github.com/open-webui/open-webui
+v{VERSION} - building the best open-source based Wisewires AI user interface.      
+
 """
 )
 
@@ -347,6 +347,11 @@ async def get_manifest_json():
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 app.mount("/cache", StaticFiles(directory=CACHE_DIR), name="cache")
+
+#
+# CAUTION: 여기가 fastapi 서버와 frontend인 svelte build의 만나는 점임
+# IMPORTANT:
+
 
 if os.path.exists(FRONTEND_BUILD_DIR):
     app.mount(

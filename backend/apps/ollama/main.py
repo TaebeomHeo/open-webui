@@ -777,6 +777,14 @@ async def generate_completion(
                         if request_id in REQUEST_POOL:
                             REQUEST_POOL.remove(request_id)
 
+            # for debug
+            log.info(f"method:POST, url:{url}/api/generate")
+            log.info(
+                "form_data.model_dump_json(exclude_none=True).encode(): {0} ".format(
+                    form_data.model_dump_json(exclude_none=True).encode()
+                )
+            )
+
             r = requests.request(
                 method="POST",
                 url=f"{url}/api/generate",
@@ -855,9 +863,13 @@ async def generate_chat_completion(
 
     r = None
 
-    log.debug(
+    #
+    #
+    log.info(f"method:POST, url:{url}/api/chat")
+    log.info(
         "form_data.model_dump_json(exclude_none=True).encode(): {0} ".format(
-            form_data.model_dump_json(exclude_none=True).encode()
+            # form_data.model_dump_json(exclude_none=True).encode()
+            form_data.model_dump_json(exclude_none=True)
         )
     )
 
