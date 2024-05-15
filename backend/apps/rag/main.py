@@ -579,7 +579,11 @@ def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> b
                     log.info(f"deleting existing collection {collection_name}")
                     CHROMA_CLIENT.delete_collection(name=collection_name)
 
-        collection = CHROMA_CLIENT.create_collection(name=collection_name)
+        # CAUTION:
+        # FIXME: RAG similarity 성능이 좋지 않은데, default로 euclidean이라서 이를 cosine으로 수정함
+        # 그래도 l2 distance와 거의 동일한 결과임. 성능이 엉망인 듯.add()
+        # 아무래도 faiss로 완전히 갈아쳐야 할 것 같음
+        collection = CHROMA_CLIENT.create_collection(name=collection_name, metadata={"hnsw:space":"cosine"}) #l2 is the default
 
         embedding_func = get_embedding_function(
             app.state.RAG_EMBEDDING_ENGINE,
