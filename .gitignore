@@ -3,6 +3,8 @@ node_modules
 /build
 /.svelte-kit
 /package
+.history/
+.vscode/
 .env
 .env.*
 !.env
