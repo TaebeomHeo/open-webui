@@ -388,6 +388,9 @@ class QueryDocForm(BaseModel):
     hybrid: Optional[bool] = None
 
 
+#
+# FIXME: CHROMA-->FAISS
+#
 @app.post("/query/doc")
 def query_doc_handler(
     form_data: QueryDocForm,
@@ -426,6 +429,9 @@ class QueryCollectionsForm(BaseModel):
     hybrid: Optional[bool] = None
 
 
+#
+# FIXME: CHROMA-->FAISS
+#
 @app.post("/query/collection")
 def query_collection_handler(
     form_data: QueryCollectionsForm,
@@ -540,6 +546,9 @@ def resolve_hostname(hostname):
 #
 # data : Pdfloader를 통해서 loaded된 것
 #
+#
+# FIXME: CHROMA-->FAISS
+#
 def store_data_in_vector_db(data, collection_name, overwrite: bool = False) -> bool:
 
     text_splitter = RecursiveCharacterTextSplitter(
@@ -557,6 +566,9 @@ def store_data_in_vector_db(data, collection_name, overwrite: bool = False) -> b
         raise ValueError(ERROR_MESSAGES.EMPTY_CONTENT)
 
 
+#
+# FIXME: CHROMA-->FAISS
+#
 def store_text_in_vector_db(
     text, metadata, collection_name, overwrite: bool = False
 ) -> bool:
@@ -605,6 +617,7 @@ def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> b
         embedding_texts = list(map(lambda x: x.replace("\n", " "), texts))
         embeddings = embedding_func(embedding_texts)
 
+        # FIXME: 각 chunk마다 metadata를 엮어서 vectordb 에 add 하는 듯
         for batch in create_batches(
             api=CHROMA_CLIENT,
             ids=[str(uuid.uuid1()) for _ in texts],
@@ -775,6 +788,12 @@ class TextRAGForm(BaseModel):
     collection_name: Optional[str] = None
 
 
+#
+# FIXME: CHROMA-->FAISS
+#
+# text를 따로 떼어네어서 저장할 일이 뭐있지?... 가면 갈수록 힘드네
+# Reinforcement by Human Feedback을 의미하나? 
+#
 @app.post("/text")
 def store_text(
     form_data: TextRAGForm,
@@ -800,6 +819,10 @@ def store_text(
         )
 
 
+#
+# FIXME: CHROMA-->FAISS
+# 이건 UI로 하는 것이 아니라 자동으로 하는 것인가? 서버의 특정 dir에  문서를 갖다 놓으면?
+#
 @app.get("/scan")
 def scan_docs_dir(user=Depends(get_admin_user)):
     for path in Path(DOCS_DIR).rglob("./**/*"):
@@ -860,12 +883,18 @@ def scan_docs_dir(user=Depends(get_admin_user)):
 
     return True
 
+#
+# FIXME: CHROMA-->FAISS
+#
 
 @app.get("/reset/db")
 def reset_vector_db(user=Depends(get_admin_user)):
     CHROMA_CLIENT.reset()
 
-
+#
+# FIXME: CHROMA-->FAISS
+# db만 없애는게 아니라 파일까지 통째로 없애는 구만
+#
 @app.get("/reset")
 def reset(user=Depends(get_admin_user)) -> bool:
     folder = f"{UPLOAD_DIR}"
