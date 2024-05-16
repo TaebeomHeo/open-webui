@@ -537,6 +537,9 @@ def resolve_hostname(hostname):
     return ipv4_addresses, ipv6_addresses
 
 
+#
+# data : Pdfloader를 통해서 loaded된 것
+#
 def store_data_in_vector_db(data, collection_name, overwrite: bool = False) -> bool:
 
     text_splitter = RecursiveCharacterTextSplitter(
@@ -566,6 +569,12 @@ def store_text_in_vector_db(
     return store_docs_in_vector_db(docs, collection_name, overwrite)
 
 
+#
+# docs : chunked, splitted documents를 말함
+# FIXME: 여기에서 CHROMA --> FAISS로 변경해야 함
+# TODO: collection_name은 pdf문서에 해당하는 metadata로 보면 됨
+# 
+#
 def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> bool:
     log.info(f"store_docs_in_vector_db {docs} {collection_name}")
 
@@ -663,6 +672,7 @@ def get_loader(filename: str, file_content_type: str, file_path: str):
         "svelte",
     ]
 
+    #FIXME: pdf의 내용에 따라 여러개의 loader가 필요할 수도 있음
     if file_ext == "pdf":
         loader = PyPDFLoader(file_path, extract_images=app.state.PDF_EXTRACT_IMAGES)
     elif file_ext == "csv":
@@ -720,10 +730,13 @@ def store_doc(
             f.close()
 
         f = open(file_path, "rb")
+
+        #FIXME: collection_name을 faiss에 맞게 적절한 metadata로 나중에 바꿔주고 계속 가지고 다녀야 함
         if collection_name == None:
             collection_name = calculate_sha256(f)[:63]
         f.close()
 
+        #FIXME: PDF의 종류마다 loader를 다르게 해야 함. 즉, 2단 배열이면 어떤 loader. 1단이면 어떤 loader 등등
         loader, known_type = get_loader(filename, file.content_type, file_path)
         data = loader.load()
 
