@@ -89,6 +89,7 @@ from config import (
     RAG_OPENAI_API_KEY,
     DEVICE_TYPE,
     CHROMA_CLIENT,
+    FAISS_CLIENT,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
     RAG_TEMPLATE,
@@ -559,6 +560,7 @@ def store_data_in_vector_db(data, collection_name, overwrite: bool = False) -> b
         add_start_index=True,
     )
 
+    # CAUTION: data가 list이든 하나든 문제 없음
     docs = text_splitter.split_documents(data)
 
     if len(docs) > 0:
@@ -637,7 +639,12 @@ def store_docs_in_vector_db(docs, collection_name, overwrite: bool = False) -> b
 
         return False
 
-
+#
+# FIXME:
+# get_loader : PDF Loader 수정 (한글처리 완성도)
+# 주의사항 : 기존 loader와는 다르게 doc의 갯수 차이가 많이 날 수 있음
+#
+#
 def get_loader(filename: str, file_content_type: str, file_path: str):
     file_ext = filename.split(".")[-1].lower()
     known_type = True
@@ -689,7 +696,9 @@ def get_loader(filename: str, file_content_type: str, file_path: str):
 
     #FIXME: pdf의 내용에 따라 여러개의 loader가 필요할 수도 있음
     if file_ext == "pdf":
-        loader = PyPDFLoader(file_path, extract_images=app.state.PDF_EXTRACT_IMAGES)
+        # loader = PyPDFLoader(file_path, extract_images=app.state.PDF_EXTRACT_IMAGES)
+        # NOTE: for 한글처리 더 잘 하는 것으로 대체  
+        loader = PDFPlumberLoader(file_path, extract_images=app.state.PDF_EXTRACT_IMAGES)
     elif file_ext == "csv":
         loader = CSVLoader(file_path)
     elif file_ext == "rst":

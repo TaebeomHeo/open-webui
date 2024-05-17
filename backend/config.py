@@ -2,6 +2,8 @@ import os
 import sys
 import logging
 import chromadb
+# TODO: FAISS
+from langchain_community.vectorstores import FAISS
 from chromadb import Settings
 from base64 import b64encode
 from bs4 import BeautifulSoup
@@ -430,6 +432,7 @@ if WEBUI_AUTH and WEBUI_SECRET_KEY == "":
 
 # FIXME: add FAISS
 CHROMA_DATA_PATH = f"{DATA_DIR}/vector_db"
+FAISS_DATA_PATH= f"{DATA_DIR}/vector_db_faiss"
 CHROMA_TENANT = os.environ.get("CHROMA_TENANT", chromadb.DEFAULT_TENANT)
 CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.DEFAULT_DATABASE)
 CHROMA_HTTP_HOST = os.environ.get("CHROMA_HTTP_HOST", "")
@@ -507,6 +510,10 @@ else:
         database=CHROMA_DATABASE,
     )
 
+#
+# TODO: FAISS_CLIENT
+FAISS_CLIENT =  FAISS()
+#
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "1500"))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "100"))
 
