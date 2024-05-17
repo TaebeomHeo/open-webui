@@ -428,6 +428,7 @@ if WEBUI_AUTH and WEBUI_SECRET_KEY == "":
 # RAG
 ####################################
 
+# FIXME: add FAISS
 CHROMA_DATA_PATH = f"{DATA_DIR}/vector_db"
 CHROMA_TENANT = os.environ.get("CHROMA_TENANT", chromadb.DEFAULT_TENANT)
 CHROMA_DATABASE = os.environ.get("CHROMA_DATABASE", chromadb.DEFAULT_DATABASE)

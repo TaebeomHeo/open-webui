@@ -33,9 +33,14 @@ def query_doc(
     k: int,
 ):
     try:
+        #
+        # FIXME: CHROMA_CLIENT -> FAISS
+        #
         collection = CHROMA_CLIENT.get_collection(name=collection_name)
         query_embeddings = embedding_function(query)
 
+        # FIXME: collection.query가 faiss의 similarity_query인듯
+        # 
         result = collection.query(
             query_embeddings=[query_embeddings],
             n_results=k,
@@ -99,6 +104,11 @@ def query_doc_with_hybrid_search(
         raise e
 
 
+#
+# FIXME: distance 기준으로 다시 sorting함
+# CAUTION: 여기서는 truncate하지 않네?
+#
+#
 def merge_and_sort_query_results(query_results, k, reverse=False):
     # Initialize lists to store combined data
     combined_distances = []
@@ -228,6 +238,9 @@ def get_embedding_function(
         return lambda query: generate_multiple(query, func)
 
 
+# CAUTION:
+# IMPORTANT:
+# NOTE: MEMORY: RAG를 실행햐는 main 부분
 def rag_messages(
     docs,
     messages,
@@ -267,6 +280,36 @@ def rag_messages(
 
     extracted_collections = []
     relevant_contexts = []
+    # 
+    # 실제 doc의 모양은 아래와 같음
+    #
+    #{
+    # 'type': 'doc'
+    # 'collection_name': 'b1a6c54ac953d6954767f5d819cf4e72828dc5133eff0ae1fa150d90b93565d'
+    # 'name': '현대차'
+    # 'title': '현대차-그랜져-메뉴얼1.pdf'
+    # 'filename': '현대차-그랜져-메뉴얼1.pdf'
+    # 'content': {}
+    # 'user_id': '2e2f8b67-34d2-48df-bfcc-92a38b10b85c'
+    # 'timestamp': 1715643958
+    # 'upload_status': True
+    #}
+
+    
+
+    #{
+    # 'type': 'collection'
+    # 'name': 'All Documents'
+    # 'title': 'All Documents'
+    # 'collection_names': [
+    #     'b1a6c54ac953d6954767f5d819cf4e72828dc5133eff0ae1fa150d90b93565d',
+    #     '1fad0136f9eda9326f7e7162c41d8d0f9c81c53acb164c8fccdcf8f0f0c4923',
+    #     '9163575225d8baded4dcef8a4e71068f553f88613bd3856b8e4546128949687'
+    # ]
+    # 'upload_status': True
+    #}
+
+
 
     for doc in docs:
         context = None
@@ -314,6 +357,7 @@ def rag_messages(
             log.exception(e)
             context = None
 
+        # FIXME: 계속 append하다보면 context-window를 초과할텐데...
         if context:
             relevant_contexts.append(context)
 

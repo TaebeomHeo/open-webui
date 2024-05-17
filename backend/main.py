@@ -133,7 +133,7 @@ class RAGMiddleware(BaseHTTPMiddleware):
         if request.method == "POST" and (
             "/api/chat" in request.url.path or "/chat/completions" in request.url.path
         ):
-            log.debug(f"request.url.path: {request.url.path}")
+            log.debug(f"[RAGMiddleware]request.url.path: {request.url.path}")
 
             # Read the original request body
             body = await request.body()
@@ -146,6 +146,9 @@ class RAGMiddleware(BaseHTTPMiddleware):
             # data["modified"] = True  # Example modification
             if "docs" in data:
                 data = {**data}
+                # IMPORTANT:
+                # CAUTION: NOTE: MEMORY: rag_messages에서 직접 RAG를 실행함
+                #
                 data["messages"] = rag_messages(
                     docs=data["docs"],
                     messages=data["messages"],
