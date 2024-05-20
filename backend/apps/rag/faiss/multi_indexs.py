@@ -17,8 +17,11 @@ from langchain_openai import (
     OpenAIEmbeddings,
     ChatOpenAI,
 )
+from langchain_community.chat_models import ChatOllama
+from langchain_community.embeddings import OllamaEmbeddings
 from langchain.retrievers.multi_query import MultiQueryRetriever
 from langchain.retrievers import BM25Retriever, EnsembleRetriever
+from wwembeddings import WWEmbeddings
 
 DOC_DIR="D:\\000.Dev\\open-webui\\backend\\data"
 VECTOR_DIR="D:\\000.Dev\\open-webui\\backend\\data\\vector_db_faiss"
@@ -41,24 +44,30 @@ def create_faiss_local(src_path: str, target_dir: str):
     loader = PDFPlumberLoader(src_path)
     _documents = loader.load()
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=CHUNK_SIZE, chunk_overlap=CHUNK_OVERLAP)
+    embeddings = WWEmbeddings()
     docs = text_splitter.split_documents(_documents)
     collection_name = calculate_sha255(src_path)[:63]
     print(f"collection name is {collection_name}")
 
     _texts = [doc.page_content for doc in docs]
-    texts = list(map(lamda x: x.replace("\n"," "), texts))
+    texts = list(map(lambda x: x.replace("\n"," "), _texts))
     metadatas = [{**doc.metadata, "collection_name":collection_name} for doc in docs]
     ids=[str(uuid.uuid1()) for _ in texts]
     #FIXME: 아래 함수 변경 to generate_ollama_embedding 혹은 embeding function 호출을 하던
-    text_embeddings = [_get_embeddings(prompt=text) for text in texts]
+    # text_embeddings = [_get_embeddings(prompt=text) for text in texts]
+    text_embeddings = embeddings.embed_documents(texts) 
+    text_embedding_pairs = zip(texts, text_embeddings)
 
     #FIXME: 조만간 embedding_function은 사라지고, Embedding object로 만들어야 함. 
-    faissdb = FAISS.from_embeddings(text_embeddings, embedding=get_ollama_embedding_function(), ids=ids, metadatas=metadatas)
+    # faissdb = FAISS.from_embeddings(text_embedding_pairs, embedding=get_ollama_embedding_function(), ids=ids, metadatas=metadatas)
+    faissdb = FAISS.from_embeddings(text_embedding_pairs, embedding=embeddings, ids=ids, metadatas=metadatas)
     # 데이터베이스 로컬에 저장
-    indexfile = os.path.join(target_dir, f"{calculate_sha255(src_path)}")
-    faissdb.save_local(indexfile)
+    # indexfile = os.path.join(target_dir, f"{calculate_sha255(src_path)}")
+    # index_name = calculate_sha255(src_path)
+    index_name = collection_name
+    faissdb.save_local(target_dir,index_name)
     
-    return faissdb
+    return index_name
 
 
 def _get_embeddings(prompt:str, model: str = "nomic-embed-text:latest", url: str = "http://localhost:11434/api/embeddings"):
@@ -122,7 +131,10 @@ def get_ollama_embedding_function(embedding_model: str = "nomic-embed-text:lates
     return lambda query: generate_multiple(query, func)
 
 
-faissDB = create_faiss_local("./data/회사사규(2023.11) - 복사본.pdf", VECTOR_DIR)
+# TODO: 파일명이 이미 있으면 create를 하지 않게 조정 필요
+# FIXME: 우선은 comment out으로
+# faissDB_index_name = create_faiss_local("./data/회사사규(2023.11) - 복사본.pdf", VECTOR_DIR)
+faissDB_index_name = '9163575225d8baded4dcef8a4e71068f553f88613bd3856b8e4546128949687b'
 #
 #
 ##
@@ -143,6 +155,7 @@ faissDB = create_faiss_local("./data/회사사규(2023.11) - 복사본.pdf", VEC
 
 
 llm = ChatOpenAI(temperature=0)
+llm_ollama = ChatOllama(base_url="http://localhost:11434", model="EEVE-Korean-10.8B-Q4:latest", num_ctx=4096, verbose=True)
 
 # loader = PDFPlumberLoader("./data/현대차-그랜져-매뉴얼.pdf")
 # loader = PyPDFLoader("./data/회사사규(2023.11) - 복사본.pdf")
@@ -163,6 +176,36 @@ embeddings = OpenAIEmbeddings()
 # query = "휴직관련 내용을 설명해달라"
 # query = "휴직 절차? "
 query = "퇴직 절차? "
+embeddingsWW = WWEmbeddings();
+# faissDB = FAISS.load_local(VECTOR_DIR,embeddingsWW, faissDB_index_name, allow_dangerous_deserialization=True)
+faissDB = FAISS.load_local(VECTOR_DIR,OllamaEmbeddings(base_url="http://localhost:11434", model="nomic-embed-text:latest"), faissDB_index_name, allow_dangerous_deserialization=True)
+faiss_local_retriever = faissDB.as_retriever(search_kwargs={"k":10})
+
+
+# NOTE: CAUTION: MultiQueryRetriever
+# IMPORTANT: 
+# ollama에서는 MultiQueryRetriever를 사용해야겠구만
+# 품질차이가 장난이 아니구만. than similarity
+#
+multiquery_retriever_local = MultiQueryRetriever.from_llm(
+    retriever=faiss_local_retriever,
+    llm=llm_ollama,
+)
+
+docs = multiquery_retriever_local.invoke(query)
+for doc in docs:
+    print("------- after multiquery_local -----------------")
+    print(doc)
+
+docs = faissDB.similarity_search_with_relevance_scores(query,k=10)
+for doc in docs:
+    print("------- after similarity search faissDB.save_local -----------------")
+    print(doc)
+
+docs = faissDB.max_marginal_relevance_search(query,k=10)
+for doc in docs:
+    print("------- after mmr similarity search faissDB.save_local -----------------")
+    print(doc)
 
 
 for doc in _docs:
@@ -215,7 +258,7 @@ multiquery_retriever = MultiQueryRetriever.from_llm(
     llm=llm,
 )
 
-docs = multiquery_retriever.invoke(query=query)
+docs = multiquery_retriever.invoke(query)
 for doc in docs:
     print("------- after multiquery -----------------")
     print(doc)
