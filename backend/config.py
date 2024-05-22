@@ -512,7 +512,7 @@ else:
 
 #
 # TODO: FAISS_CLIENT
-FAISS_CLIENT =  FAISS()
+# FAISS_CLIENT =  FAISS()
 #
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", "1500"))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", "100"))

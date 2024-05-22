@@ -89,7 +89,7 @@ from config import (
     RAG_OPENAI_API_KEY,
     DEVICE_TYPE,
     CHROMA_CLIENT,
-    FAISS_CLIENT,
+    # FAISS_CLIENT,
     CHUNK_SIZE,
     CHUNK_OVERLAP,
     RAG_TEMPLATE,
