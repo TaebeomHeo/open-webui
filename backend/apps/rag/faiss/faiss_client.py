@@ -30,7 +30,8 @@ from langchain_community.vectorstores.utils import DistanceStrategy
 from langchain_community.embeddings import OllamaEmbeddings, HuggingFaceEmbeddings
 from langchain_community.chat_models import ChatOllama
 from langchain.retrievers.multi_query import MultiQueryRetriever
-from langchain.retrievers import BM25Retriever, EnsembleRetriever, RePhraseQueryRetriever
+from langchain.retrievers import EnsembleRetriever, RePhraseQueryRetriever, ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor, LLMChainFilter
 from langchain_community.retrievers import BM25Retriever
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PDFPlumberLoader, PyPDFLoader
@@ -97,6 +98,11 @@ class FAISS_CLIENT:
                 self.collections[index_name] = {
                     "faiss_db": faiss_db,
                     "retriever": retriever,
+                    "compression_retriever": ContextualCompressionRetriever(
+                        base_compressor= LLMChainExtractor.from_llm(self.ollama["llm"]),
+                        # base_compressor= LLMChainFilter.from_llm(self.ollama["llm"]),
+                        base_retriever = retriever,
+                    ),
                     "rag_chain" : self.create_rag_chain(retriever) if retriever else None,
                 }
                 #
@@ -140,6 +146,11 @@ class FAISS_CLIENT:
         self.collections[index_name] = {
             "faiss_db": faiss_db,
             "retriever": retriever,
+            "compression_retriever": ContextualCompressionRetriever(
+                        base_compressor= LLMChainExtractor.from_llm(self.ollama["llm"]),
+                        # base_compressor= LLMChainFilter.from_llm(self.ollama["llm"]),
+                        base_retriever = retriever,
+                    ),
             "rag_chain": rag_chain,
         }
         
@@ -175,6 +186,25 @@ class FAISS_CLIENT:
             retriever = self.collections[collection_name]["retriever"]
             return retriever.invoke(query)
 
+    def search_compression(self, query, collection_name):
+        """Search the given query in the specified collection."""
+        #
+        logging.info(f"searching using compression [{query}] in collection [{collection_name}]")
+        #
+        if collection_name == "all":
+            results = []
+            for name, data in self.collections.items():
+                retriever = data["compression_retriever"]
+                result = retriever.invoke(query)
+                results.extend(result)
+            return results
+            # return ContextCompress(results).compress()
+        else:
+            if collection_name not in self.collections:
+                raise ValueError(f"Collection {collection_name} does not exist.")
+            retriever = self.collections[collection_name]["compression_retriever"]
+            return retriever.invoke(query)
+        
     def search_llm(self, query, collection_name):
         """Search the given query in the specified collection."""
         #

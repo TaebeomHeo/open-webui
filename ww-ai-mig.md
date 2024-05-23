@@ -45,3 +45,21 @@
   - type:'collection' -> 문서에 등록된 모든 collection list를 가지고 있음
 - merge_and_sort_query_results: 📓💻
   - distances, documents, metadatas tuples을 distance를 기준으로 내림차순
+
+# Customizing 전략
+
+### Langchain lib을 적극적으로
+
+- api를 직접 호출❌하는 것을 ~~[**최대한 지양**]()~~ --> langchain class/lib을 활용
+- 한글을 잘 하는 vector db 활용 : chroma -> ⭕️FAISS⭕️
+- retriever : 회사 사규와 같은 긴 문서 조회는 거의 성능이 나지 않음 (except ChatGPT) -> 별의별 방법 모두 동원해야 할 듯
+
+### Retriever 別 테스트/특징
+
+##### 📌 벤치마크 : OpenAI Embedding, ChatOpenAI의 performance가 기준이 됨
+
+##### naive retriever : FAISS.as_retriever()
+
+- 2-3 page 문서에는 chatGPT와 유사한 결과. but 긴 문서(회사규정집 등)는 완전 꽝
+- **_MultiQuery, RephraseQuery를 응용해봐도 짧은 질문에 대해서는 더 황당한 질문으로 확대되어 품질이 더욱 떨어짊_**
+-
