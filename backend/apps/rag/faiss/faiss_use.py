@@ -27,9 +27,34 @@ faiss_client.create_collection("./data/회사사규(2023.11) - 복사본.pdf")
 faiss_client_openai.create_collection("./data/회사사규(2023.11) - 복사본.pdf")
 faiss_client_hf.create_collection("./data/회사사규(2023.11) - 복사본.pdf")
 
+faiss_client.create_collection("./data/WW챗봇 경조금 및 복리후생비 지급 기준_2024_재무관리실.pdf")
+faiss_client_openai.create_collection("./data/WW챗봇 경조금 및 복리후생비 지급 기준_2024_재무관리실.pdf")
+faiss_client_hf.create_collection("./data/WW챗봇 경조금 및 복리후생비 지급 기준_2024_재무관리실.pdf")
+
+faiss_client.create_collection("./data/WW챗봇 출장여비규정_20240401_재무관리실.pdf")
+faiss_client_openai.create_collection("./data/WW챗봇 출장여비규정_20240401_재무관리실.pdf")
+faiss_client_hf.create_collection("./data/WW챗봇 출장여비규정_20240401_재무관리실.pdf")
+
+faiss_client.create_collection("./data/복귀자 관련 문의 사항.pdf")
+faiss_client_openai.create_collection("./data/복귀자 관련 문의 사항.pdf")
+faiss_client_hf.create_collection("./data/복귀자 관련 문의 사항.pdf")
+
+faiss_client.create_collection("./data/AI시장분석_증권.pdf")
+faiss_client_openai.create_collection("./data/AI시장분석_증권.pdf")
+faiss_client_hf.create_collection("./data/AI시장분석_증권.pdf")
+
+faiss_client.create_collection("./data/생성AI 확산에 따른 디지털 인재 양성 개선 방안 연구.pdf")
+faiss_client_openai.create_collection("./data/생성AI 확산에 따른 디지털 인재 양성 개선 방안 연구.pdf")
+faiss_client_hf.create_collection("./data/생성AI 확산에 따른 디지털 인재 양성 개선 방안 연구.pdf")
+
+
 # query = "휴일 및 휴가에 대한 규정은?"
 # query = "휴직이나 퇴직 규정은?"
-query = "경조사 휴가 경조사 지원금"
+# query = "경조사 휴가 경조사 지원금"
+# query = "프로젝트 복귀자는 어떻게 하면 되나요?" # good quality 복귀자 관련 문의 사항.pdf에서는 최고의 품질
+# query = "자녀 출생시 경조금 지급기준은? " # pdf 문서가 짧아서 조회가 잘 되는가? 하여간 good quality
+# query = "플리토 주식 성장 가능성 " # 언급된 부분이 일부 조회됨 not good
+query = "소프트 스킬에 대한 선호도 " 
 
 docs = faiss_client.search(query,"all")
 for doc in docs:
@@ -48,16 +73,13 @@ for doc in docs_hf:
 
 print("\n\n\n\n")
 docs = faiss_client.search_llm(query,"all")
-for doc in docs:
-    print("------- after faiss_client.search_llm -----------------")
-    print(doc)
+print("------- after faiss_client.search_llm -----------------")
+print(docs)
 
 docs_openai = faiss_client_openai.search_llm(query,"all")
-for doc in docs_openai:
-    print("------- after faiss_openai_client.search_llm -----------------")
-    print(doc)
+print("------- after faiss_openai_client.search_llm -----------------")
+print(docs)
 
 docs_hf = faiss_client_hf.search_llm(query,"all")
-for doc in docs_hf:
-    print("------- after faiss_huggingface_client.search_llm -----------------")
-    print(doc)
+print("------- after faiss_huggingface_client.search_llm -----------------")
+print(docs)
