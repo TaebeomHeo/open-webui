@@ -23,7 +23,9 @@ import logging
 import uuid
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
-from langchain_core.prompts import ChatPromptTemplate
+from langchain.chains import create_retrieval_chain
+from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain_core.prompts import ChatPromptTemplate, PromptTemplate
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_community.vectorstores import FAISS
 from langchain_community.vectorstores.utils import DistanceStrategy
@@ -48,6 +50,7 @@ load_dotenv()
 
 CHUNK_SIZE = int(os.environ.get("CHUNK_SIZE", 1500))
 CHUNK_OVERLAP = int(os.environ.get("CHUNK_OVERLAP", 100))
+os_is_mac = (os.getenv("OS_SUPPORT") == "MAC") 
 
 def calculate_sha256(file_path):
     sha256_hash = hashlib.sha256()
@@ -70,10 +73,12 @@ class FAISS_CLIENT:
             self.ollama['llm'] = ChatOpenAI(temperature=0) 
             self.ollama['embedding'] = OpenAIEmbeddings()
         elif type == "huggingface":
+            #FIXME: not working for M1
             self.ollama['llm'] = ChatOllama(base_url=ollama_url, model=ollama_llm_model)
             self.ollama['embedding'] = HuggingFaceEmbeddings(
                 model_name = "sentence-transformers/all-MiniLM-L6-v2",
-                model_kwargs={"device":"cpu"},
+                # model_kwargs={"device":"cpu"},
+                model_kwargs={"device":"mps"}, # for M1
                 encode_kwargs={"normalize_embeddings":False}
             )
             
@@ -95,15 +100,33 @@ class FAISS_CLIENT:
                     distance_strategy=DistanceStrategy.COSINE
                 )
                 retriever = self.get_retriever(faiss_db, type='vectordb')
+                rag_chain = self.create_rag_chain(retriever) if retriever else None
+                template_string = (
+                    "Given the following question and context, return YES if the context is relevant to the question and NO if it isn't.\n\n"
+                    "Answer with YES or NO only. No additional text.\n\n"
+                    "> Question: {question}\n"
+                    "> Context:\n"
+                    ">>>\n"
+                    "{context}\n"
+                    ">>>\n"
+                    "> Relevant (YES / NO):"
+                )
+                prompt = PromptTemplate.from_template(template=template_string)
+                compression_retriever = ContextualCompressionRetriever(
+                    # base_compressor= LLMChainExtractor.from_llm(self.ollama["llm"]),
+                    base_compressor= LLMChainFilter.from_llm(self.ollama["llm"], prompt),
+                    base_retriever = retriever,
+                )
+                rag_chain_compression = self.create_rag_chain(compression_retriever) if compression_retriever else None
                 self.collections[index_name] = {
                     "faiss_db": faiss_db,
                     "retriever": retriever,
-                    "compression_retriever": ContextualCompressionRetriever(
-                        base_compressor= LLMChainExtractor.from_llm(self.ollama["llm"]),
-                        # base_compressor= LLMChainFilter.from_llm(self.ollama["llm"]),
-                        base_retriever = retriever,
-                    ),
-                    "rag_chain" : self.create_rag_chain(retriever) if retriever else None,
+                    "compression_retriever": compression_retriever,
+                    "rag_chain" : rag_chain,
+                    # IMPORTANT:
+                    # NOTE: MEMORY: retriever기반의 rag_chain은 거의 답변이 동일함 (local vs openai)
+                    # CAUTION: 단지 시간소요가 많이됨
+                    "rag_chain_compression":rag_chain_compression
                 }
                 #
                 logging.info(f"adding collection[{index_name}]")
@@ -143,15 +166,19 @@ class FAISS_CLIENT:
 
         retriever = self.get_retriever(faiss_db, type='vectordb')
         rag_chain = self.create_rag_chain(retriever) if retriever else None
+        compression_retriever = ContextualCompressionRetriever(
+                    # base_compressor= LLMChainExtractor.from_llm(self.ollama["llm"]),
+                    base_compressor= LLMChainFilter.from_llm(self.ollama["llm"]),
+                    base_retriever = retriever,
+        )
+        rag_chain_compression = self.create_rag_chain(compression_retriever) if compression_retriever else None
+
         self.collections[index_name] = {
             "faiss_db": faiss_db,
             "retriever": retriever,
-            "compression_retriever": ContextualCompressionRetriever(
-                        base_compressor= LLMChainExtractor.from_llm(self.ollama["llm"]),
-                        # base_compressor= LLMChainFilter.from_llm(self.ollama["llm"]),
-                        base_retriever = retriever,
-                    ),
+            "compression_retriever": compression_retriever, 
             "rag_chain": rag_chain,
+            "rag_chain_compression": rag_chain_compression
         }
         
         return index_name
@@ -208,7 +235,7 @@ class FAISS_CLIENT:
     def search_llm(self, query, collection_name):
         """Search the given query in the specified collection."""
         #
-        logging.info(f"searching [{query}] in collection [{collection_name}]")
+        logging.info(f"searching using rag_chain [{query}] in collection [{collection_name}]")
         #
         if collection_name == "all":
             results = []
@@ -222,7 +249,26 @@ class FAISS_CLIENT:
             if collection_name not in self.collections:
                 raise ValueError(f"Collection {collection_name} does not exist.")
             rag_chain = self.collections[collection_name]["rag_chain"]
-            return rag_chain.invoke(query)
+            return rag_chain.invoke({'input':query})
+
+    def search_llm_compression(self, query, collection_name):
+        """Search the given query in the specified collection."""
+        #
+        logging.info(f"searching using rag_chain_compression [{query}] in collection [{collection_name}]")
+        #
+        if collection_name == "all":
+            results = []
+            for name, data in self.collections.items():
+                rag_chain = data["rag_chain_compression"]
+                result = rag_chain.invoke(query)
+                results.extend(result)
+            return results
+            # return ContextCompress(results).compress()
+        else:
+            if collection_name not in self.collections:
+                raise ValueError(f"Collection {collection_name} does not exist.")
+            rag_chain = self.collections[collection_name]["rag_chain_compression"]
+            return rag_chain.invoke({'input':query})
         
     def get_collections(self):
         """Return a list of all collection names."""
@@ -271,15 +317,24 @@ class FAISS_CLIENT:
 
     def create_rag_chain(self, retriever):
         """Create a RAG chain for the given retriever."""
-        prompt = ChatPromptTemplate.from_template("You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.  Question: {question} Context: {context} Answer:")
-        output_parser = StrOutputParser()
+        prompt = ChatPromptTemplate.from_template("You are an assistant for question-answering tasks. Use the following pieces of retrieved context to answer the question. If you don't know the answer, just say that you don't know. Use three sentences maximum and keep the answer concise.  Question: {input} Context: {context} Answer:")
+        llm = self.ollama['llm']
+        question_answer_chain = create_stuff_documents_chain(llm, prompt)
+        chain = create_retrieval_chain(retriever, question_answer_chain)
+        return chain
 
-        def format_docs(docs):
-            return "\n\n".join(doc.page_content for doc in docs)
-        # format_docs = lambda x: x  # placeholder for document formatting
-        return (
-            {"context": retriever | format_docs, "question": RunnablePassthrough()}
-            | prompt 
-            | self.ollama['llm']
-            | output_parser 
-        )
+        # NOTE: CAUTION: 위와 아래의 결과가 동일함. LCEL을 함수로 만들어 놓은 것임
+        # output_parser = StrOutputParser()
+
+        # def format_docs(docs):
+        #     return "\n\n".join(doc.page_content for doc in docs)
+        # # format_docs = lambda x: x  # placeholder for document formatting
+        # return (
+        #     # FIXME: TODO: DONE: ContextCompressionRetriever와 format_docs는 piping오류 발생 (tuple vs function)
+        #     # syntax error였음
+        #     {"context": retriever | format_docs, "question": RunnablePassthrough()}
+        #     | prompt 
+        #     | self.ollama['llm']
+        #     | output_parser 
+        # )
+

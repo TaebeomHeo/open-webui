@@ -62,4 +62,30 @@
 
 - 2-3 page 문서에는 chatGPT와 유사한 결과. but 긴 문서(회사규정집 등)는 완전 꽝
 - **_MultiQuery, RephraseQuery를 응용해봐도 짧은 질문에 대해서는 더 황당한 질문으로 확대되어 품질이 더욱 떨어짊_**
--
+
+##### compression retriever : ContextCompressionRetriever📓
+
+- similarity로 조회된 것이 문맥상 맞는지 LLM을 통해서 한번 더 검증함
+- 이 retriever + LLM : 그럭저럭 품질 나옴 (not bad)
+
+##### ensemble retriever : EnsembleRetriever 👓👫
+
+- 여러 retriever를 조합해서 (2개 이상) 그 조회결과에 weight를 줘서 하나로 취합함 📚
+- 실례: sparse retriever (keyword search, BM25) + dense retriever(vectordb)
+  - 사용자가 정확한 keyword 구사 능력이 있을 때 유용함 🔒
+- **사전식의 문서**인 경우 아주 유용 👏 🚗
+
+##### parent document retriever : ParentDocumentRetriever ✈️
+
+- vector/embedding은 작은 chunk 단위로 이뤄지는 데서 오는 단점 극복
+- 큰 그림을 볼 수 있는 vector를 따로 제공함으로써 해결 🆗
+- 조회 -> small chunk에서 찾음->이 것들의 parent를 찾아서 return 함 ‼️
+- 결론은, 큰 문맥을 담고 있는 🔑 parent document들을 반환함 👏
+- 호흡이 긴 논문 형태에 적합 📚🖥
+
+### Create_retrieval_chain으로 연결
+
+##### Retriever의 결과를 LLM과 연결할 때, 단순 연결하지 말고 ~~RetrievalQA를 활용~~ (검증완료‼️ 😄 🔉)
+
+- RetrievalQA.from_chain_type(llm=, chain_type="stuff", retriever=) --> depricated
+- create_stuff_documents와 create_retrieval_chain으로 만들면 될 듯 한데. 🔒🔓
