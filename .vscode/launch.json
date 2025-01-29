@@ -1,0 +1,14 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Python Debugger: Current File",
+			"type": "python",
+			"request": "launch",
+			"program": "${file}",
+			"console": "integratedTerminal",
+			"pythonPath": "/Users/bombbie/pythonenv3.11/bin/python",
+			"cwd": "${fileDirname}" // 현재 파일의 디렉토리를 작업 디렉토리로
+		}
+	]
+}
