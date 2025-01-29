@@ -14,6 +14,8 @@ required_open_webui_version: 0.3.9
 # WARNI [browser_use.agent.service] No history or first screenshot to create GIF from
 # FIXME: open-webui 에서 console로 로깅안됨... 
 # TODO: open-webui 로깅방법을 준수해서 로깅하자구.  
+# TODO: action icon 도 새롭게 추가하자구. 
+
 
 from pydantic import BaseModel, Field
 from typing import Optional, Union, Generator, Iterator
