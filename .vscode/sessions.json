@@ -1,0 +1,57 @@
+{
+  "$schema": "https://cdn.statically.io/gh/nguyenngoclongdev/cdn/main/schema/v10/terminal-keeper.json",
+  "theme": "tribe",
+  "active": "default",
+  "activateOnStartup": true,
+  "keepExistingTerminals": true,
+  "sessions": {
+    "default": [
+      {
+        "name": "backend",
+        "autoExecuteCommands": true,
+        "icon": "server-environment",
+        "color": "terminal.ansiGreen",
+        "commands": [
+          "cd ~/pythonenv3.11/",
+          "source bin/activate",
+          "cd ~/CodeLearning/open-webui/backend",
+          "sh dev.sh"
+        ]
+      },
+      {
+        "name": "frontend",
+        "autoExecuteCommands": true,
+        "icon": "browser",
+        "color": "terminal.ansiGreen",
+        "commands": [
+          "cd ~/CodeLearning/open-webui/frontend",
+          "npm run dev"
+        ]
+      },
+      [
+        {
+          "name": "general",
+          "commands": [
+            ""
+          ]
+        },
+        {
+          "name": "git",
+          "commands": [
+            ""
+          ],
+          "icon": "git-branch",
+          "color": "terminal.ansiGreen"
+        }
+      ]
+    ],
+    "ollama": [
+      {
+        "name": "ollama",
+        "commands": [
+          ""
+        ]
+      }
+    ]
+  }
+}
